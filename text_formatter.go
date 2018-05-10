@@ -1,3 +1,9 @@
+/*************************************
+* @Author: menghaozhang@deepglint.com
+* @Description:
+* @Date: Created on 2018/5/10
+* @Modified By:
+**************************************/
 package logrus
 
 import (
@@ -51,10 +57,6 @@ type TextFormatter struct {
 	// be desired.
 	DisableSorting bool
 
-
-	// Disables the truncation of the level text to 4 characters.
-	DisableLevelTruncation bool
-
 	// QuoteEmptyFields will wrap empty fields in quotes if true
 	QuoteEmptyFields bool
 
@@ -104,11 +106,11 @@ func (f *TextFormatter) Format(entry *Entry) ([]byte, error) {
 			f.appendKeyValue(b, "time", entry.Time.Format(timestampFormat))
 		}
 		f.appendKeyValue(b, "level", entry.Level.String())
-		if entry.Message != "" {
-			f.appendKeyValue(b, "msg", entry.Message)
-		}
 		for _, key := range keys {
 			f.appendKeyValue(b, key, entry.Data[key])
+		}
+		if entry.Message != "" {
+			f.appendKeyValue(b, "msg", entry.Message)
 		}
 	}
 
@@ -120,7 +122,7 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 	var levelColor int
 	switch entry.Level {
 	case DebugLevel:
-		levelColor = gray
+		levelColor = green
 	case WarnLevel:
 		levelColor = yellow
 	case ErrorLevel, FatalLevel, PanicLevel:
@@ -129,23 +131,25 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 		levelColor = blue
 	}
 
-	levelText := strings.ToUpper(entry.Level.String())
-	if !f.DisableLevelTruncation {
-		levelText = levelText[0:4]
-	}
+	levelText := strings.ToUpper(entry.Level.String())[0:4]
 
 	if f.DisableTimestamp {
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m %-44s ", levelColor, levelText, entry.Message)
+		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m", levelColor, levelText)
 	} else if !f.FullTimestamp {
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%04d] %-44s ", levelColor, levelText, int(entry.Time.Sub(baseTimestamp)/time.Second), entry.Message)
+		//fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%04d] %-44s ", levelColor, levelText, int(entry.Time.Sub(baseTimestamp)/time.Second), entry.Message)
+		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s]", levelColor, levelText, entry.Time.Format(timestampFormat))
 	} else {
-		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s] %-44s ", levelColor, levelText, entry.Time.Format(timestampFormat), entry.Message)
+		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s]", levelColor, levelText, entry.Time.Format(timestampFormat))
 	}
+
 	for _, k := range keys {
 		v := entry.Data[k]
 		fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m=", levelColor, k)
 		f.appendValue(b, v)
 	}
+
+	fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m: %s", levelColor, "MSG", entry.Message)
+
 }
 
 func (f *TextFormatter) needsQuoting(text string) bool {
@@ -181,6 +185,7 @@ func (f *TextFormatter) appendValue(b *bytes.Buffer, value interface{}) {
 	if !f.needsQuoting(stringVal) {
 		b.WriteString(stringVal)
 	} else {
-		b.WriteString(fmt.Sprintf("%q", stringVal))
+		b.WriteString(fmt.Sprintf("%s", stringVal))
 	}
 }
+
