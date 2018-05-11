@@ -8,6 +8,7 @@ import (
 )
 
 type Logger struct {
+	flag   int
 	// The logs are `io.Copy`'d to this in a mutex. It's common to set this to a
 	// file, or leave it default which is `os.Stderr`. You can also set this to
 	// something more adventorous, such as logging to Kafka.
@@ -72,7 +73,12 @@ func New() *Logger {
 		Formatter: new(TextFormatter),
 		Hooks:     make(LevelHooks),
 		Level:     InfoLevel,
+		flag:      Lshortfile,
 	}
+}
+
+func (logger *Logger) SetFlag(flag int) {
+	logger.flag = flag
 }
 
 func (logger *Logger) newEntry() *Entry {

@@ -41,6 +41,20 @@ func GetLevel() Level {
 	return std.level()
 }
 
+// SetFlag sets the output flags for the logger.
+func SetFlag(flag int) {
+	std.mu.Lock()
+	defer std.mu.Unlock()
+	std.SetFlag(flag)
+}
+
+// GetFlag returns the output flags of the logger.
+func GetFlag() int {
+	std.mu.Lock()
+	defer std.mu.Unlock()
+	return std.flag
+}
+
 // AddHook adds a hook to the standard logger hooks.
 func AddHook(hook Hook) {
 	std.mu.Lock()

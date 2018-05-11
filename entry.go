@@ -6,6 +6,13 @@ import (
 	"os"
 	"sync"
 	"time"
+	"runtime"
+	"strings"
+)
+
+const (
+	Llongfile     = 1 << iota                 // full file name and line number: /a/b/c/d.go:23
+	Lshortfile                    // final file name element and line number: d.go:23. overrides Llongfile
 )
 
 var bufferPool *sync.Pool
@@ -26,6 +33,10 @@ var ErrorKey = "error"
 // Warn, Error, Fatal or Panic is called on it. These objects can be reused and
 // passed around as much as you wish to avoid field duplication.
 type Entry struct {
+	Flag   int        // properties
+
+	mu	sync.Mutex // ensures atomic writes; protects the following fields
+
 	Logger *Logger
 
 	// Contains all the fields set by the user.
@@ -38,6 +49,8 @@ type Entry struct {
 	// This field will be set on entry firing and the value will be equal to the one in Logger struct field.
 	Level Level
 
+	Location string
+
 	// Message passed to Debug, Info, Warn, Error, Fatal or Panic
 	Message string
 
@@ -48,6 +61,7 @@ type Entry struct {
 func NewEntry(logger *Logger) *Entry {
 	return &Entry{
 		Logger: logger,
+		Flag: logger.flag,
 		// Default is five fields, give a little extra room
 		Data: make(Fields, 5),
 	}
@@ -83,24 +97,40 @@ func (entry *Entry) WithFields(fields Fields) *Entry {
 	for k, v := range fields {
 		data[k] = v
 	}
-	return &Entry{Logger: entry.Logger, Data: data}
+	return &Entry{Logger: entry.Logger, Flag: entry.Flag, Data: data}
 }
 
 // This function is not declared with a pointer value because otherwise
 // race conditions will occur when using multiple goroutines
-func (entry Entry) log(level Level, msg string) {
+func (entry Entry) log(calldepth int, level Level, msg string) {
 	var buffer *bytes.Buffer
+	var file string
+	var line int
+
 	entry.Time = time.Now()
 	entry.Level = level
 	entry.Message = msg
-
 	entry.fireHooks()
+
+	entry.mu.Lock()
+	defer entry.mu.Unlock()
+	if entry.Flag&(Lshortfile|Llongfile) != 0 {
+		// Release lock while getting caller info - it's expensive.
+		entry.mu.Unlock()
+		var ok bool
+		_, file, line, ok = runtime.Caller(calldepth)
+		if !ok {
+			file = "???"
+			line = 0
+		}
+		entry.mu.Lock()
+	}
+	entry.formatLocation(file, line)
 
 	buffer = bufferPool.Get().(*bytes.Buffer)
 	buffer.Reset()
 	defer bufferPool.Put(buffer)
 	entry.Buffer = buffer
-
 	entry.write()
 
 	entry.Buffer = nil
@@ -111,6 +141,24 @@ func (entry Entry) log(level Level, msg string) {
 	if level <= PanicLevel {
 		panic(&entry)
 	}
+}
+
+func (entry *Entry) formatLocation(file string, line int) {
+	var buffer bytes.Buffer
+	if entry.Flag&(Lshortfile|Llongfile) != 0 {
+		if entry.Flag&Lshortfile != 0 {
+			dirs := strings.Split(file, "/")
+			len := len(dirs)
+			if len > 0 {
+				file = dirs[len-1]
+			}
+		}
+		buffer.WriteString(file)
+		buffer.WriteByte(':')
+		buffer.WriteString(fmt.Sprintf("%d", line))
+	}
+
+	entry.Location = buffer.String()
 }
 
 // This function is not declared with a pointer value because otherwise
@@ -140,7 +188,7 @@ func (entry *Entry) write() {
 
 func (entry *Entry) Debug(args ...interface{}) {
 	if entry.Logger.level() >= DebugLevel {
-		entry.log(DebugLevel, fmt.Sprint(args...))
+		entry.log(4, DebugLevel, fmt.Sprint(args...))
 	}
 }
 
@@ -150,13 +198,13 @@ func (entry *Entry) Print(args ...interface{}) {
 
 func (entry *Entry) Info(args ...interface{}) {
 	if entry.Logger.level() >= InfoLevel {
-		entry.log(InfoLevel, fmt.Sprint(args...))
+		entry.log(4, InfoLevel, fmt.Sprint(args...))
 	}
 }
 
 func (entry *Entry) Warn(args ...interface{}) {
 	if entry.Logger.level() >= WarnLevel {
-		entry.log(WarnLevel, fmt.Sprint(args...))
+		entry.log(4, WarnLevel, fmt.Sprint(args...))
 	}
 }
 
@@ -166,20 +214,20 @@ func (entry *Entry) Warning(args ...interface{}) {
 
 func (entry *Entry) Error(args ...interface{}) {
 	if entry.Logger.level() >= ErrorLevel {
-		entry.log(ErrorLevel, fmt.Sprint(args...))
+		entry.log(4, ErrorLevel, fmt.Sprint(args...))
 	}
 }
 
 func (entry *Entry) Fatal(args ...interface{}) {
 	if entry.Logger.level() >= FatalLevel {
-		entry.log(FatalLevel, fmt.Sprint(args...))
+		entry.log(4, FatalLevel, fmt.Sprint(args...))
 	}
 	Exit(1)
 }
 
 func (entry *Entry) Panic(args ...interface{}) {
 	if entry.Logger.level() >= PanicLevel {
-		entry.log(PanicLevel, fmt.Sprint(args...))
+		entry.log(4, PanicLevel, fmt.Sprint(args...))
 	}
 	panic(fmt.Sprint(args...))
 }

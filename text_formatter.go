@@ -131,7 +131,7 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 		levelColor = blue
 	}
 
-	levelText := strings.ToUpper(entry.Level.String())[0:4]
+	levelText := strings.ToUpper(entry.Level.String())
 
 	if f.DisableTimestamp {
 		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m", levelColor, levelText)
@@ -142,6 +142,8 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 		fmt.Fprintf(b, "\x1b[%dm%s\x1b[0m[%s]", levelColor, levelText, entry.Time.Format(timestampFormat))
 	}
 
+	fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m", levelColor, entry.Location)
+
 	for _, k := range keys {
 		v := entry.Data[k]
 		fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m=", levelColor, k)
@@ -149,7 +151,6 @@ func (f *TextFormatter) printColored(b *bytes.Buffer, entry *Entry, keys []strin
 	}
 
 	fmt.Fprintf(b, " \x1b[%dm%s\x1b[0m: %s", levelColor, "MSG", entry.Message)
-
 }
 
 func (f *TextFormatter) needsQuoting(text string) bool {
