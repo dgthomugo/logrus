@@ -186,96 +186,188 @@ func (entry *Entry) write() {
 	}
 }
 
-func (entry *Entry) Debug(args ...interface{}) {
+func (entry *Entry) debugWithCalldepth(calldepth int, args ...interface{}) {
 	if entry.Logger.level() >= DebugLevel {
-		entry.log(4, DebugLevel, fmt.Sprint(args...))
+		entry.log(calldepth+1, DebugLevel, fmt.Sprint(args...))
 	}
 }
 
-func (entry *Entry) Print(args ...interface{}) {
-	entry.Info(args...)
-}
-
-func (entry *Entry) Info(args ...interface{}) {
+func (entry *Entry) infoWithCalldepth(calldepth int, args ...interface{}) {
 	if entry.Logger.level() >= InfoLevel {
-		entry.log(4, InfoLevel, fmt.Sprint(args...))
+		entry.log(calldepth+1, InfoLevel, fmt.Sprint(args...))
 	}
 }
 
-func (entry *Entry) Warn(args ...interface{}) {
+func (entry *Entry) warnWithCalldepth(calldepth int, args ...interface{}) {
 	if entry.Logger.level() >= WarnLevel {
-		entry.log(4, WarnLevel, fmt.Sprint(args...))
+		entry.log(calldepth+1, WarnLevel, fmt.Sprint(args...))
 	}
 }
 
-func (entry *Entry) Warning(args ...interface{}) {
-	entry.Warn(args...)
-}
-
-func (entry *Entry) Error(args ...interface{}) {
+func (entry *Entry) errorWithCalldepth(calldepth int, args ...interface{}) {
 	if entry.Logger.level() >= ErrorLevel {
-		entry.log(4, ErrorLevel, fmt.Sprint(args...))
+		entry.log(calldepth+1, ErrorLevel, fmt.Sprint(args...))
 	}
 }
 
-func (entry *Entry) Fatal(args ...interface{}) {
+func (entry *Entry) fatalWithCalldepth(calldepth int, args ...interface{}) {
 	if entry.Logger.level() >= FatalLevel {
-		entry.log(4, FatalLevel, fmt.Sprint(args...))
+		entry.log(calldepth+1, FatalLevel, fmt.Sprint(args...))
 	}
 	Exit(1)
 }
 
-func (entry *Entry) Panic(args ...interface{}) {
+func (entry *Entry) panicWithCalldepth(calldepth int, args ...interface{}) {
 	if entry.Logger.level() >= PanicLevel {
-		entry.log(4, PanicLevel, fmt.Sprint(args...))
+		entry.log(calldepth+1, PanicLevel, fmt.Sprint(args...))
 	}
 	panic(fmt.Sprint(args...))
+}
+
+func (entry *Entry) Debug(args ...interface{}) {
+	if entry.Data==nil ||  len(entry.Data)==0 {
+		entry.debugWithCalldepth(4, args...)
+	} else {
+		entry.debugWithCalldepth(2, args...)
+	}
+}
+
+func (entry *Entry) Print(args ...interface{}) {
+	if entry.Data==nil ||  len(entry.Data)==0 {
+		entry.infoWithCalldepth(4, args...)
+	} else {
+		entry.infoWithCalldepth(2, args...)
+	}
+}
+
+func (entry *Entry) Info(args ...interface{}) {
+	if entry.Data==nil ||  len(entry.Data)==0 {
+		entry.infoWithCalldepth(4, args...)
+	} else {
+		entry.infoWithCalldepth(2, args...)
+	}
+}
+
+func (entry *Entry) Warn(args ...interface{}) {
+	if entry.Data==nil ||  len(entry.Data)==0 {
+		entry.warnWithCalldepth(4, args...)
+	} else {
+		entry.warnWithCalldepth(2, args...)
+	}
+}
+
+func (entry *Entry) Warning(args ...interface{}) {
+	if entry.Data==nil ||  len(entry.Data)==0 {
+		entry.warnWithCalldepth(4, args...)
+	} else {
+		entry.warnWithCalldepth(2, args...)
+	}
+}
+
+func (entry *Entry) Error(args ...interface{}) {
+	if entry.Data==nil ||  len(entry.Data)==0 {
+		entry.errorWithCalldepth(4, args...)
+	} else {
+		entry.errorWithCalldepth(2, args...)
+	}
+}
+
+func (entry *Entry) Fatal(args ...interface{}) {
+	if entry.Data==nil ||  len(entry.Data)==0 {
+		entry.fatalWithCalldepth(4, args...)
+	} else {
+		entry.fatalWithCalldepth(2, args...)
+	}
+}
+
+func (entry *Entry) Panic(args ...interface{}) {
+	if entry.Data==nil ||  len(entry.Data)==0 {
+		entry.panicWithCalldepth(4, args...)
+	} else {
+		entry.panicWithCalldepth(2, args...)
+	}
 }
 
 // Entry Printf family functions
 
 func (entry *Entry) Debugf(format string, args ...interface{}) {
 	if entry.Logger.level() >= DebugLevel {
-		entry.Debug(fmt.Sprintf(format, args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.debugWithCalldepth(4, fmt.Sprintf(format, args...))
+		} else {
+			entry.debugWithCalldepth(2, fmt.Sprintf(format, args...))
+		}
 	}
 }
 
 func (entry *Entry) Infof(format string, args ...interface{}) {
 	if entry.Logger.level() >= InfoLevel {
-		entry.Info(fmt.Sprintf(format, args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.infoWithCalldepth(4, fmt.Sprintf(format, args...))
+		} else {
+			entry.infoWithCalldepth(2, fmt.Sprintf(format, args...))
+		}
 	}
 }
 
 func (entry *Entry) Printf(format string, args ...interface{}) {
-	entry.Infof(format, args...)
+	if entry.Logger.level() >= InfoLevel {
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.infoWithCalldepth(4, fmt.Sprintf(format, args...))
+		} else {
+			entry.infoWithCalldepth(2, fmt.Sprintf(format, args...))
+		}
+	}
 }
 
 func (entry *Entry) Warnf(format string, args ...interface{}) {
 	if entry.Logger.level() >= WarnLevel {
-		entry.Warn(fmt.Sprintf(format, args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.warnWithCalldepth(4, fmt.Sprintf(format, args...))
+		} else {
+			entry.warnWithCalldepth(2, fmt.Sprintf(format, args...))
+		}
 	}
 }
 
 func (entry *Entry) Warningf(format string, args ...interface{}) {
-	entry.Warnf(format, args...)
+	if entry.Logger.level() >= WarnLevel {
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.warnWithCalldepth(4, fmt.Sprintf(format, args...))
+		} else {
+			entry.warnWithCalldepth(2, fmt.Sprintf(format, args...))
+		}
+	}
 }
 
 func (entry *Entry) Errorf(format string, args ...interface{}) {
 	if entry.Logger.level() >= ErrorLevel {
-		entry.Error(fmt.Sprintf(format, args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.errorWithCalldepth(4, fmt.Sprintf(format, args...))
+		} else {
+			entry.errorWithCalldepth(2, fmt.Sprintf(format, args...))
+		}
 	}
 }
 
 func (entry *Entry) Fatalf(format string, args ...interface{}) {
 	if entry.Logger.level() >= FatalLevel {
-		entry.Fatal(fmt.Sprintf(format, args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.fatalWithCalldepth(4, fmt.Sprintf(format, args...))
+		} else {
+			entry.fatalWithCalldepth(2, fmt.Sprintf(format, args...))
+		}
 	}
 	Exit(1)
 }
 
 func (entry *Entry) Panicf(format string, args ...interface{}) {
 	if entry.Logger.level() >= PanicLevel {
-		entry.Panic(fmt.Sprintf(format, args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.panicWithCalldepth(4, fmt.Sprintf(format, args...))
+		} else {
+			entry.panicWithCalldepth(2, fmt.Sprintf(format, args...))
+		}
 	}
 }
 
@@ -283,46 +375,82 @@ func (entry *Entry) Panicf(format string, args ...interface{}) {
 
 func (entry *Entry) Debugln(args ...interface{}) {
 	if entry.Logger.level() >= DebugLevel {
-		entry.Debug(entry.sprintlnn(args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.debugWithCalldepth(4, args...)
+		} else {
+			entry.debugWithCalldepth(2, args...)
+		}
 	}
 }
 
 func (entry *Entry) Infoln(args ...interface{}) {
 	if entry.Logger.level() >= InfoLevel {
-		entry.Info(entry.sprintlnn(args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.infoWithCalldepth(4, args...)
+		} else {
+			entry.infoWithCalldepth(2, args...)
+		}
 	}
 }
 
 func (entry *Entry) Println(args ...interface{}) {
-	entry.Infoln(args...)
+	if entry.Logger.level() >= InfoLevel {
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.infoWithCalldepth(4, args...)
+		} else {
+			entry.infoWithCalldepth(2, args...)
+		}
+	}
 }
 
 func (entry *Entry) Warnln(args ...interface{}) {
 	if entry.Logger.level() >= WarnLevel {
-		entry.Warn(entry.sprintlnn(args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.warnWithCalldepth(4, args...)
+		} else {
+			entry.warnWithCalldepth(2, args...)
+		}
 	}
 }
 
 func (entry *Entry) Warningln(args ...interface{}) {
-	entry.Warnln(args...)
+	if entry.Logger.level() >= WarnLevel {
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.warnWithCalldepth(4, args...)
+		} else {
+			entry.warnWithCalldepth(2, args...)
+		}
+	}
 }
 
 func (entry *Entry) Errorln(args ...interface{}) {
 	if entry.Logger.level() >= ErrorLevel {
-		entry.Error(entry.sprintlnn(args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.errorWithCalldepth(4, args...)
+		} else {
+			entry.errorWithCalldepth(2, args...)
+		}
 	}
 }
 
 func (entry *Entry) Fatalln(args ...interface{}) {
 	if entry.Logger.level() >= FatalLevel {
-		entry.Fatal(entry.sprintlnn(args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.fatalWithCalldepth(4, args...)
+		} else {
+			entry.fatalWithCalldepth(2, args...)
+		}
 	}
 	Exit(1)
 }
 
 func (entry *Entry) Panicln(args ...interface{}) {
 	if entry.Logger.level() >= PanicLevel {
-		entry.Panic(entry.sprintlnn(args...))
+		if entry.Data==nil ||  len(entry.Data)==0 {
+			entry.panicWithCalldepth(4, args...)
+		} else {
+			entry.panicWithCalldepth(2, args...)
+		}
 	}
 }
 
